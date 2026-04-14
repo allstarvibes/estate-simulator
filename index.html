@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estate Tax Simulator — วางแผนภาษีมรดกผ่านประกันชีวิต</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap');
+
+  :root {
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #378ADD;
+    --green: #0F6E56;
+    --green-light: #E1F5EE;
+    --amber: #854F0B;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --gray: #5F5E5A;
+    --gray-light: #F1EFE8;
+    --border: #e0ddd6;
+    --bg: #fafaf8;
+    --white: #ffffff;
+    --text: #1a1917;
+    --text-muted: #5F5E5A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    background: var(--blue);
+    color: white;
+    padding: 24px 20px 20px;
+    text-align: center;
+  }
+  .page-header .logo-line {
+    font-size: 12px;
+    opacity: .75;
+    margin-bottom: 6px;
+    letter-spacing: .05em;
+  }
+  .page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .page-header p {
+    font-size: 13px;
+    opacity: .85;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 18px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .card-title .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media(max-width:480px){ .input-grid { grid-template-columns: 1fr; } }
+
+  .input-group { display: flex; flex-direction: column; gap: 5px; }
+  .input-group.full { grid-column: 1/-1; }
+
+  .input-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .badge-tax { background: var(--red-light); color: var(--red); }
+  .badge-notax { background: var(--green-light); color: var(--green); }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 10px;
+    transition: border-color .15s;
+  }
+  .input-row:focus-within { border-color: var(--blue-mid); }
+
+  .input-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 0;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    color: var(--text);
+    min-width: 0;
+  }
+  .input-row input:focus { outline: none; }
+  .input-row input::placeholder { color: #bbb; }
+  .input-row .unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .input-hint {
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 1px;
+  }
+
+  .heir-row {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .heir-btn {
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    color: var(--text-muted);
+    background: var(--white);
+    transition: all .15s;
+    line-height: 1.3;
+  }
+  .heir-btn.active {
+    background: var(--blue-light);
+    color: var(--blue);
+    border-color: var(--blue-mid);
+    font-weight: 600;
+  }
+
+  .calc-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    background: var(--blue);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    margin: 16px 0 0;
+    transition: background .15s;
+    letter-spacing: .02em;
+  }
+  .calc-btn:hover { background: #0d4a82; }
+  .calc-btn:active { transform: scale(.99); }
+
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  @media(max-width:400px){ .summary-grid { grid-template-columns: 1fr 1fr; } }
+
+  .sum-box {
+    border-radius: 10px;
+    padding: 11px 10px;
+    text-align: center;
+  }
+  .sum-lbl { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; line-height: 1.4; }
+  .sum-val { font-size: 19px; font-weight: 700; }
+  .sum-sub { font-size: 10px; margin-top: 2px; }
+
+  .sb-neutral { background: var(--gray-light); }
+  .sb-neutral .sum-val, .sb-neutral .sum-sub { color: var(--text); }
+  .sb-red { background: var(--red-light); }
+  .sb-red .sum-val, .sb-red .sum-sub { color: var(--red); }
+  .sb-green { background: var(--green-light); }
+  .sb-green .sum-val, .sb-green .sum-sub { color: var(--green); }
+  .sb-blue { background: var(--blue-light); }
+  .sb-blue .sum-val, .sb-blue .sum-sub { color: var(--blue); }
+
+  .bar-section { margin-bottom: 14px; }
+  .bar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+  .stacked-bar {
+    height: 34px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 4px;
+  }
+  .bar-seg {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    transition: flex .5s ease;
+    overflow: hidden;
+  }
+  .bar-seg span {
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .seg-land { background: #B5D4F4; }
+  .seg-land span { color: #0C447C; }
+  .seg-cash { background: #FAC775; }
+  .seg-cash span { color: #633806; }
+  .seg-other { background: #D3D1C7; }
+  .seg-other span { color: #444441; }
+  .seg-ins { background: #9FE1CB; }
+  .seg-ins span { color: #085041; }
+  .seg-tax { background: #F09595; justify-content: center; padding: 0; }
+  .seg-tax span { color: #791F1F; }
+
+  .bar-legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+  }
+  .bl-i { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); }
+  .bl-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .strategy-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .strat-row {
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .strat-row:last-child { border-bottom: none; }
+  .strat-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .sn-blue { background: var(--blue-light); color: var(--blue); }
+  .sn-green { background: var(--green-light); color: var(--green); }
+  .sn-amber { background: var(--amber-light); color: var(--amber); }
+  .strat-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+  .strat-text .sub { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+  .strat-val { font-size: 14px; font-weight: 700; color: var(--green); white-space: nowrap; }
+  .strat-val.red { color: var(--red); }
+  .strat-val.blue { color: var(--blue); }
+
+  .irr-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .irr-box {
+    background: var(--green-light);
+    border-radius: 8px;
+    padding: 9px 8px;
+    text-align: center;
+  }
+  .irr-rate { font-size: 10px; color: var(--green); margin-bottom: 3px; }
+  .irr-val { font-size: 16px; font-weight: 700; color: var(--green); }
+  .irr-sub { font-size: 10px; color: var(--green); margin-top: 1px; }
+  .irr-note { font-size: 10px; color: var(--text-muted); margin-top: 9px; line-height: 1.6; }
+
+  .alert {
+    border-radius: 8px;
+    padding: 11px 13px;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 12px;
+  }
+  .alert-green { background: var(--green-light); color: var(--green); }
+  .alert-amber { background: var(--amber-light); color: var(--amber); }
+  .alert-red { background: var(--red-light); color: var(--red); }
+  .alert-blue { background: var(--blue-light); color: var(--blue); }
+  .alert b { font-weight: 700; }
+
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-family: 'Sarabun', sans-serif;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-top: 14px;
+    display: block;
+  }
+  .reset-btn:hover { background: var(--gray-light); }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    color: #bbb;
+    padding: 12px 16px 20px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo-line">กรุงเทพประกันชีวิต — Bancassurance</div>
+  <h1>Estate Tax Simulator</h1>
+  <p>วางแผนภาษีมรดกผ่านประกันชีวิตสะสมทรัพย์</p>
+</div>
+
+<div class="container">
+
+  <!-- STEP 1 -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num">1</div>
+      กรอกข้อมูลทรัพย์สิน
+    </div>
+    <div class="input-grid">
+      <div class="input-group">
+        <div class="input-label">ที่ดิน / อสังหาริมทรัพย์ <span class="badge badge-tax">เสียภาษีมรดก</span></div>
+        <div class="input-row">
+          <input type="number" id="land" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">ใช้ราคาประเมิน ณ วันที่รับมรดก</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">เงินฝาก / เงินสด <span class="badge badge-tax">เสียภาษีมรดก</span></div>
+        <div class="input-row">
+          <input type="number" id="cash" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">รวมทุกบัญชีธนาคาร</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">หลักทรัพย์ / หุ้น / กองทุน <span class="badge badge-tax">เสียภาษีมรดก</span></div>
+        <div class="input-row">
+          <input type="number" id="stock" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">ราคา ณ วันสิ้นสุดตลาด</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">ยานพาหนะ / ทรัพย์อื่น <span class="badge badge-tax">เสียภาษีมรดก</span></div>
+        <div class="input-row">
+          <input type="number" id="vehicle" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">รถยนต์ รถจักรยานยนต์ เรือ</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">หนี้สิน (หักออกจากกองมรดก)</div>
+        <div class="input-row">
+          <input type="number" id="debt" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">สินเชื่อบ้าน หนี้ธุรกิจ ฯลฯ</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">ระยะเวลากรมธรรม์ที่ต้องการ</div>
+        <div class="input-row">
+          <input type="number" id="years" placeholder="15" min="5" max="30" inputmode="decimal">
+          <span class="unit">ปี</span>
+        </div>
+        <div class="input-hint">แนะนำ 10–20 ปี</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num">2</div>
+      ผู้รับมรดก (กำหนดอัตราภาษี)
+    </div>
+    <div class="heir-row">
+      <button class="heir-btn active" onclick="setHeir(this,'child',5)">บุตร/หลาน (ผู้สืบสันดาน)<br>อัตราภาษี 5%</button>
+      <button class="heir-btn" onclick="setHeir(this,'parent',5)">พ่อ/แม่ (บุพการี)<br>อัตราภาษี 5%</button>
+      <button class="heir-btn" onclick="setHeir(this,'other',10)">บุคคลอื่น<br>อัตราภาษี 10%</button>
+      <button class="heir-btn" onclick="setHeir(this,'spouse',0)">คู่สมรสจดทะเบียน<br>ยกเว้นภาษี</button>
+    </div>
+    <button class="calc-btn" onclick="calculate()">คำนวณแผนภาษีมรดก</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+
+    <!-- ก่อนวางแผน -->
+    <div class="card">
+      <div class="card-title">
+        <div class="step-num">3</div>
+        ภาพรวมก่อนวางแผน
+      </div>
+      <div class="summary-grid">
+        <div class="sum-box sb-neutral">
+          <div class="sum-lbl">กองมรดกรวมสุทธิ</div>
+          <div class="sum-val" id="r-total">—</div>
+          <div class="sum-sub">ล้านบาท</div>
+        </div>
+        <div class="sum-box sb-blue">
+          <div class="sum-lbl">ส่วนที่เกิน 100 ล้าน</div>
+          <div class="sum-val" id="r-excess">—</div>
+          <div class="sum-sub">ล้านบาท (ฐานภาษี)</div>
+        </div>
+        <div class="sum-box sb-red">
+          <div class="sum-lbl">ภาษีมรดกถ้าไม่วางแผน</div>
+          <div class="sum-val" id="r-tax-before">—</div>
+          <div class="sum-sub" id="r-tax-before-sub">ล้านบาท</div>
+        </div>
+      </div>
+
+      <div class="bar-section">
+        <div class="bar-label">โครงสร้างกองมรดก — ก่อนวางแผน</div>
+        <div class="stacked-bar" id="bar-before"></div>
+        <div class="bar-legend">
+          <div class="bl-i"><div class="bl-sq" style="background:#B5D4F4"></div>อสังหาฯ</div>
+          <div class="bl-i"><div class="bl-sq" style="background:#FAC775"></div>เงินสด/ฝาก</div>
+          <div class="bl-i"><div class="bl-sq" style="background:#D3D1C7"></div>หลักทรัพย์/อื่นๆ</div>
+          <div class="bl-i"><div class="bl-sq" style="background:#F09595"></div>ส่วนที่ถูกเก็บภาษี</div>
+        </div>
+      </div>
+
+      <div id="no-tax-msg" class="alert alert-green" style="display:none">
+        <b>มรดกสุทธิไม่เกิน 100 ล้านบาท</b> — ผู้รับมรดกยังไม่ต้องเสียภาษีในปัจจุบัน แต่แนะนำให้วางแผนล่วงหน้าเพื่อรองรับมูลค่าที่ดินที่อาจเพิ่มขึ้นในอนาคต
+      </div>
+    </div>
+
+    <!-- แผนที่แนะนำ -->
+    <div class="card" id="plan-card" style="display:none">
+      <div class="card-title">
+        <div class="step-num">4</div>
+        แผนการโอนเข้ากรมธรรม์ที่แนะนำ
+      </div>
+      <div class="strategy-list">
+        <div class="strat-row">
+          <div class="strat-num sn-blue">1</div>
+          <div class="strat-text">ทรัพย์สินที่คงไว้ในกองมรดก<span class="sub">อสังหาฯ + เงินสดส่วนที่เหลือ รวมไม่เกิน 100 ล้าน</span></div>
+          <div class="strat-val blue" id="r-keep">—</div>
+        </div>
+        <div class="strat-row">
+          <div class="strat-num sn-green">2</div>
+          <div class="strat-text">ทุนประกันที่แนะนำโอนเข้ากรมธรรม์<span class="sub">เงินสด/สภาพคล่องส่วนเกิน — ออกจากกองมรดก ไม่เสียภาษี</span></div>
+          <div class="strat-val" id="r-policy">—</div>
+        </div>
+        <div class="strat-row">
+          <div class="strat-num sn-amber">3</div>
+          <div class="strat-text">ภาษีมรดกหลังวางแผน<span class="sub">กองมรดกที่เหลือไม่เกินเกณฑ์ยกเว้น</span></div>
+          <div class="strat-val" id="r-tax-after">—</div>
+        </div>
+        <div class="strat-row">
+          <div class="strat-num sn-green">4</div>
+          <div class="strat-text">ภาษีที่ประหยัดได้<span class="sub">เงินจำนวนนี้ยังอยู่กับครอบครัว ไม่จ่ายให้รัฐ</span></div>
+          <div class="strat-val" id="r-saved">—</div>
+        </div>
+      </div>
+
+      <div class="bar-section" style="margin-top:14px">
+        <div class="bar-label">โครงสร้างกองมรดก — หลังวางแผน</div>
+        <div class="stacked-bar" id="bar-after"></div>
+        <div class="bar-legend">
+          <div class="bl-i"><div class="bl-sq" style="background:#B5D4F4"></div>อสังหาฯ (ในกองมรดก)</div>
+          <div class="bl-i"><div class="bl-sq" style="background:#FAC775"></div>เงินสด (คงเหลือ)</div>
+          <div class="bl-i"><div class="bl-sq" style="background:#9FE1CB"></div>กรมธรรม์ (นอกกองมรดก)</div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="sum-box sb-red">
+          <div class="sum-lbl">ภาษีถ้าไม่วางแผน</div>
+          <div class="sum-val" id="r2-before">—</div>
+          <div class="sum-sub">ล้านบาท</div>
+        </div>
+        <div class="sum-box sb-green">
+          <div class="sum-lbl">ภาษีหลังวางแผน</div>
+          <div class="sum-val" id="r2-after">0</div>
+          <div class="sum-sub">ล้านบาท</div>
+        </div>
+        <div class="sum-box sb-green">
+          <div class="sum-lbl">ประหยัดได้</div>
+          <div class="sum-val" id="r2-saved">—</div>
+          <div class="sum-sub">ล้านบาท</div>
+        </div>
+      </div>
+
+      <div id="plan-alert" class="alert"></div>
+    </div>
+
+    <!-- IRR -->
+    <div class="card" id="irr-card" style="display:none">
+      <div class="card-title">
+        <div class="step-num">5</div>
+        ผลตอบแทนของเงินในกรมธรรม์ (IRR การันตี)
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:2px">เงิน <strong id="irr-p" style="color:var(--text)">—</strong> ล้านบาท ใน <strong id="irr-y" style="color:var(--text)">—</strong> ปี จะโตเป็น</div>
+      <div class="irr-grid">
+        <div class="irr-box">
+          <div class="irr-rate">IRR 1.50%</div>
+          <div class="irr-val" id="irr-lo">—</div>
+          <div class="irr-sub">ล้านบาท</div>
+        </div>
+        <div class="irr-box">
+          <div class="irr-rate">IRR 1.75%</div>
+          <div class="irr-val" id="irr-mi">—</div>
+          <div class="irr-sub">ล้านบาท</div>
+        </div>
+        <div class="irr-box">
+          <div class="irr-rate">IRR 2.00%</div>
+          <div class="irr-val" id="irr-hi">—</div>
+          <div class="irr-sub">ล้านบาท</div>
+        </div>
+      </div>
+      <div class="irr-note">* IRR ข้างต้นเป็นผลตอบแทนการันตีจากประกันสะสมทรัพย์ ไม่รวมเงินปันผล (PAR) ที่อาจได้รับเพิ่ม ตัวเลขจริงขึ้นกับผลิตภัณฑ์และอายุผู้เอาประกัน</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="alert alert-amber">
+      <b>ข้อสังเกตสำคัญ:</b> Simulator นี้เป็นเครื่องมือประเมินเบื้องต้นเท่านั้น มูลค่าทรัพย์สินจริงอาจเปลี่ยนแปลงได้ และควรปรึกษานักกฎหมายหรือที่ปรึกษาภาษีก่อนตัดสินใจ กลยุทธ์นี้ให้ผลดีที่สุดเมื่อวางแผนก่อนมีปัญหาทางการเงิน
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">เริ่มใหม่</button>
+  </div>
+
+</div>
+
+<div class="footer">
+  เอกสารใช้ภายในบริษัทเท่านั้น ห้ามเผยแพร่ก่อนได้รับอนุญาต<br>
+  กรุงเทพประกันชีวิต จำกัด (มหาชน) · Bangkok Life Assurance PCL.
+</div>
+
+<script>
+let taxRate = 0.05;
+
+function setHeir(el, type, rate) {
+  document.querySelectorAll('.heir-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  taxRate = rate / 100;
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function fmt(n, dec=2) {
+  return n.toLocaleString('th-TH', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function makeBars(containerId, segs) {
+  const total = segs.reduce((s, sg) => s + sg.val, 0) || 1;
+  const html = segs.map(sg => {
+    if (sg.val <= 0) return '';
+    const pct = Math.max((sg.val / total) * 100, 2);
+    return `<div class="bar-seg ${sg.cls}" style="flex:${pct}"><span>${sg.label}</span></div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function calculate() {
+  const land = v('land'), cash = v('cash'), stock = v('stock'), vehicle = v('vehicle');
+  const debt = v('debt'), years = v('years') || 15;
+  const liquid = cash + stock + vehicle;
+  const totalGross = land + liquid;
+  const totalNet = Math.max(0, totalGross - debt);
+  const excess = Math.max(0, totalNet - 100);
+  const taxBefore = excess * taxRate;
+
+  document.getElementById('r-total').textContent = fmt(totalNet);
+  document.getElementById('r-excess').textContent = fmt(excess);
+  document.getElementById('r-tax-before').textContent = fmt(taxBefore);
+
+  makeBars('bar-before', [
+    { cls: 'seg-land', val: land, label: land > 0 ? `ที่ดิน ${fmt(land,0)}ล.` : '' },
+    { cls: 'seg-cash', val: cash, label: cash > 0 ? `เงินสด ${fmt(cash,0)}ล.` : '' },
+    { cls: 'seg-other', val: stock + vehicle, label: stock + vehicle > 0 ? `${fmt(stock+vehicle,0)}ล.` : '' },
+    { cls: 'seg-tax', val: excess > 0 ? excess : 0, label: excess > 0 ? `ภาษี ${fmt(taxBefore,0)}ล.` : '' },
+  ]);
+
+  document.getElementById('results').classList.add('show');
+
+  if (taxRate === 0 || totalNet <= 100) {
+    document.getElementById('no-tax-msg').style.display = 'block';
+    document.getElementById('plan-card').style.display = 'none';
+    document.getElementById('irr-card').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-tax-msg').style.display = 'none';
+  document.getElementById('plan-card').style.display = 'block';
+  document.getElementById('irr-card').style.display = 'block';
+
+  const policyAmt = Math.min(excess, liquid);
+  const keepInEstate = totalNet - policyAmt;
+  const taxAfter = Math.max(0, keepInEstate - 100) * taxRate;
+  const saved = taxBefore - taxAfter;
+  const cashLeft = Math.max(0, cash - policyAmt);
+  const otherLeft = stock + vehicle;
+
+  document.getElementById('r-keep').textContent = fmt(keepInEstate) + ' ล้าน';
+  document.getElementById('r-policy').textContent = fmt(policyAmt) + ' ล้าน';
+  document.getElementById('r-tax-after').textContent = fmt(taxAfter) + ' ล้าน';
+  document.getElementById('r-saved').textContent = fmt(saved) + ' ล้าน';
+  document.getElementById('r2-before').textContent = fmt(taxBefore);
+  document.getElementById('r2-after').textContent = fmt(taxAfter);
+  document.getElementById('r2-saved').textContent = fmt(saved);
+
+  const afterTotal = keepInEstate + policyAmt || 1;
+  makeBars('bar-after', [
+    { cls: 'seg-land', val: land, label: land > 0 ? `ที่ดิน ${fmt(land,0)}ล.` : '' },
+    { cls: 'seg-cash', val: cashLeft, label: cashLeft > 0 ? `เงินสด ${fmt(cashLeft,0)}ล.` : '' },
+    { cls: 'seg-other', val: otherLeft, label: otherLeft > 0 ? `${fmt(otherLeft,0)}ล.` : '' },
+    { cls: 'seg-ins', val: policyAmt, label: `กรมธรรม์ ${fmt(policyAmt,0)}ล. (นอกกองมรดก)` },
+  ]);
+
+  document.getElementById('irr-p').textContent = fmt(policyAmt);
+  document.getElementById('irr-y').textContent = years;
+  const irr = (p, r, y) => p * Math.pow(1 + r, y);
+  document.getElementById('irr-lo').textContent = fmt(irr(policyAmt, 0.015, years));
+  document.getElementById('irr-mi').textContent = fmt(irr(policyAmt, 0.0175, years));
+  document.getElementById('irr-hi').textContent = fmt(irr(policyAmt, 0.02, years));
+
+  const alertEl = document.getElementById('plan-alert');
+  if (policyAmt < excess) {
+    alertEl.className = 'alert alert-amber';
+    alertEl.innerHTML = `<b>หมายเหตุ:</b> เงินสด/สภาพคล่อง (${fmt(liquid)} ล้าน) น้อยกว่าส่วนที่เกิน 100 ล้าน (${fmt(excess)} ล้าน) — โอนได้สูงสุด ${fmt(policyAmt)} ล้าน กองมรดกอาจยังมีภาษีค้างอยู่ ควรวางแผนเพิ่มเติมกับนักกฎหมาย`;
+  } else {
+    alertEl.className = 'alert alert-green';
+    alertEl.innerHTML = `<b>แผนนี้ใช้ได้ผลเต็มที่</b> โอนเงิน ${fmt(policyAmt)} ล้านเข้ากรมธรรม์ กองมรดกที่เหลือ ${fmt(keepInEstate)} ล้าน อยู่ในเกณฑ์ยกเว้น — ประหยัดภาษีได้ ${fmt(saved)} ล้านบาท`;
+  }
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetAll() {
+  ['land','cash','stock','vehicle','debt','years'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('results').classList.remove('show');
+  document.querySelectorAll('.heir-btn').forEach((b,i) => b.classList.toggle('active', i === 0));
+  taxRate = 0.05;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
