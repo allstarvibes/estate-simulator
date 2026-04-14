@@ -195,6 +195,52 @@
   .calc-btn:hover { background: #0d4a82; }
   .calc-btn:active { transform: scale(.99); }
 
+  .health-btn {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .health-btn.active {
+    border-color: #7C6FF7;
+    background: #F0EFFE;
+    color: #4C42C7;
+    font-weight: 500;
+  }
+
+  .prod-card {
+    border-radius: 10px;
+    padding: 13px 15px;
+    margin-bottom: 8px;
+  }
+  .prod-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .prod-card-sub {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .prod-card-reason {
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    line-height: 1.6;
+  }
+  .prod-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    float: right;
+  }
+
   .results { display: none; }
   .results.show { display: block; }
 
@@ -349,7 +395,6 @@
 <body>
 
 <div class="page-header">
-  <div class="logo-line">กรุงเทพประกันชีวิต — Bancassurance</div>
   <h1>Estate Tax Simulator</h1>
   <p>วางแผนภาษีมรดกผ่านประกันชีวิตสะสมทรัพย์</p>
 </div>
@@ -410,6 +455,40 @@
           <span class="unit">ปี</span>
         </div>
         <div class="input-hint">แนะนำ 10–20 ปี</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1.5 — ข้อมูลผู้เอาประกัน -->
+  <div class="card">
+    <div class="card-title">
+      <div class="step-num" style="background:#7C6FF7">1.5</div>
+      ข้อมูลผู้วางแผน (เพื่อแนะนำผลิตภัณฑ์ที่เหมาะสม)
+    </div>
+    <div class="input-grid">
+      <div class="input-group">
+        <div class="input-label">อายุปัจจุบัน</div>
+        <div class="input-row">
+          <input type="number" id="age" placeholder="40" min="1" max="85" inputmode="decimal">
+          <span class="unit">ปี</span>
+        </div>
+        <div class="input-hint">อายุผู้ที่จะทำประกัน (เจ้าของมรดก)</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">จำนวนเงินที่ต้องการโอนเข้ากรมธรรม์</div>
+        <div class="input-row">
+          <input type="number" id="policyamt" placeholder="0" min="0" inputmode="decimal">
+          <span class="unit">ล้านบาท</span>
+        </div>
+        <div class="input-hint">ระบุจำนวนเงินที่ต้องการโอน หรือปล่อยว่างให้ระบบคำนวณอัตโนมัติ</div>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="input-label" style="margin-bottom:8px">โรคประจำตัว / สุขภาพ</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="health-btn active" onclick="setHealth(this,'none')" id="hbtn-none">✅ สุขภาพดี ไม่มีโรคประจำตัว</button>
+        <button class="health-btn" onclick="setHealth(this,'mild')" id="hbtn-mild">⚠️ มีโรคประจำตัวเล็กน้อย (ความดัน / ไขมัน)</button>
+        <button class="health-btn" onclick="setHealth(this,'severe')" id="hbtn-severe">🔴 มีโรคร้ายแรง / เคยผ่าตัด</button>
       </div>
     </div>
   </div>
@@ -529,6 +608,7 @@
         </div>
       </div>
 
+      <div id="compare-box" class="alert" style="display:none;margin-bottom:8px"></div>
       <div id="plan-alert" class="alert"></div>
     </div>
 
@@ -559,6 +639,19 @@
       <div class="irr-note">* IRR ข้างต้นเป็นผลตอบแทนการันตีจากประกันสะสมทรัพย์ ไม่รวมเงินปันผล (PAR) ที่อาจได้รับเพิ่ม ตัวเลขจริงขึ้นกับผลิตภัณฑ์และอายุผู้เอาประกัน</div>
     </div>
 
+    <!-- แผนประกันที่แนะนำ -->
+    <div class="card" id="product-card" style="display:none">
+      <div class="card-title">
+        <div class="step-num">6</div>
+        แผนประกันชีวิต BLA ที่แนะนำสำหรับท่าน
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">ระบบวิเคราะห์จากอายุ สุขภาพ และจำนวนเงินที่ต้องการโอนของท่าน</div>
+      <div id="product-list"></div>
+      <div style="margin-top:12px;font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6">
+        * ติดต่อที่ปรึกษาการเงินเพื่อรับข้อมูลเบี้ยและผลประโยชน์ที่แม่นยำตามอายุและสุขภาพของท่าน
+      </div>
+    </div>
+
     <div class="divider"></div>
 
     <div class="alert alert-amber">
@@ -577,6 +670,13 @@
 
 <script>
 let taxRate = 0.05;
+let healthState = 'none';
+
+function setHealth(el, state) {
+  healthState = state;
+  document.querySelectorAll('.health-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
 
 function setHeir(el, type, rate) {
   document.querySelectorAll('.heir-btn').forEach(b => b.classList.remove('active'));
@@ -626,14 +726,185 @@ function calculate() {
     document.getElementById('no-tax-msg').style.display = 'block';
     document.getElementById('plan-card').style.display = 'none';
     document.getElementById('irr-card').style.display = 'none';
+    document.getElementById('product-card').style.display = 'none';
     return;
   }
 
   document.getElementById('no-tax-msg').style.display = 'none';
   document.getElementById('plan-card').style.display = 'block';
   document.getElementById('irr-card').style.display = 'block';
+  document.getElementById('product-card').style.display = 'block';
 
-  const policyAmt = Math.min(excess, liquid);
+  // คำนวณและแนะนำผลิตภัณฑ์อัตโนมัติ
+  const age = parseFloat(document.getElementById('age').value) || 45;
+  const manualAmt = parseFloat(document.getElementById('policyamt').value) || 0;
+  const recAmt = manualAmt > 0 ? manualAmt : Math.min(excess, liquid);
+  const canNotExamine = true; // ผลิตภัณฑ์ไม่ตรวจสุขภาพ
+
+  const products = [];
+
+  // Logic แนะนำตาม อายุ + สุขภาพ + จำนวนเงิน
+  if (healthState === 'severe') {
+    // มีโรคร้ายแรง → เฉพาะผลิตภัณฑ์ไม่ตรวจสุขภาพ
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: '✅ ไม่ตรวจสุขภาพ เหมาะที่สุดสำหรับท่าน — โอนเงินออกจากกองมรดกได้ทันที ไม่ถูกเก็บภาษีมรดก',
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+    products.push({
+      icon: '💰',
+      name: 'Gain 1st 525 (Par)',
+      tag: 'ปันผล · IRR 1.75%',
+      tagColor: '#633806',
+      tagBg: '#FAEEDA',
+      detail: 'จ่ายเบี้ย 5 ปี · คุ้มครองถึง 80 ปี · มีเงินปันผล · ไม่ตรวจสุขภาพ',
+      reason: '✅ จ่ายเบี้ยสั้นที่สุด 5 ปี เหมาะสำหรับท่านที่ต้องการความมั่นใจระยะยาว รับปันผลทุกปี',
+      border: '#FAC775', bg: '#FFFBF0', textColor: '#854F0B', reasonBg: '#FAEEDA', reasonColor: '#633806'
+    });
+  } else if (age >= 60) {
+    // อายุ 60+ → จ่ายเบี้ยสั้น คุ้มครองนาน
+    products.push({
+      icon: '💰',
+      name: 'Gain 1st 525 (Par)',
+      tag: 'ปันผล · IRR 1.75%',
+      tagColor: '#633806',
+      tagBg: '#FAEEDA',
+      detail: 'จ่ายเบี้ย 5 ปี · คุ้มครองถึง 80 ปี · มีเงินปันผล · ไม่ตรวจสุขภาพ',
+      reason: `✅ เหมาะที่สุดสำหรับอายุ ${age} ปี — จ่ายเบี้ยสั้นเพียง 5 ปี คุ้มครองถึง 80 ปี รับปันผลทุกปีระหว่างถือกรมธรรม์`,
+      border: '#FAC775', bg: '#FFFBF0', textColor: '#854F0B', reasonBg: '#FAEEDA', reasonColor: '#633806'
+    });
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: '✅ IRR สูงสุด 2.00% เงินโตต่อเนื่อง เหมาะถ้าต้องการผลตอบแทนดีควบคู่การวางแผนมรดก',
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+  } else if (recAmt <= 5) {
+    // เงินโอนน้อย ≤ 5 ล้าน
+    products.push({
+      icon: '🔰',
+      name: 'Simple 15/15',
+      tag: 'คุ้มครอง · IRR 1.50%',
+      tagColor: '#791F1F',
+      tagBg: '#FCEBEB',
+      detail: 'จ่ายเบี้ย 15 ปี · คุ้มครอง 15 ปี · เบี้ยเริ่มต้น 500 บาท/เดือน · อุบัติเหตุ 300% · ไม่ตรวจสุขภาพ',
+      reason: `✅ เหมาะสำหรับเงินโอน ${recAmt.toFixed(1)} ล้าน — เบี้ยต่ำที่สุด เริ่มต้นง่าย คุ้มครองสูง ไม่ตรวจสุขภาพ`,
+      border: '#F09595', bg: '#FFF5F5', textColor: '#A32D2D', reasonBg: '#FCEBEB', reasonColor: '#791F1F'
+    });
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: '✅ ผลตอบแทนดีที่สุด เหมาะสำหรับออมและวางแผนมรดกระยะยาว',
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+  } else if (recAmt <= 20) {
+    // เงินโอน 5–20 ล้าน
+    products.push({
+      icon: '⚡',
+      name: 'Speed Up 15/8',
+      tag: 'ผลตอบแทน · IRR 1.75%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 8 ปี · คุ้มครอง 15 ปี · คืนเงิน 10%/ปี ทุกปี · ไม่ตรวจสุขภาพ',
+      reason: `✅ เหมาะสำหรับเงินโอน ${recAmt.toFixed(1)} ล้าน — รับเงินคืน 10% ทุกปี เพิ่ม cash flow ให้ครอบครัวระหว่างถือกรมธรรม์`,
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: '✅ IRR สูงสุด 2.00% เหมาะถ้าต้องการเน้นผลตอบแทนรวมสูงที่สุด',
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+  } else if (recAmt <= 50) {
+    // เงินโอน 20–50 ล้าน
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: `✅ เหมาะที่สุดสำหรับเงินโอน ${recAmt.toFixed(1)} ล้าน — IRR 2.00% สูงสุด โอนเงินออกจากกองมรดกได้ทันที ไม่เสียภาษีมรดก`,
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+    if (healthState === 'none') {
+      products.push({
+        icon: '🛡',
+        name: '380 Plus (Par)',
+        tag: 'คุ้มครอง+ปันผล · IRR 1.75%',
+        tagColor: '#085041',
+        tagBg: '#E1F5EE',
+        detail: 'จ่ายเบี้ย 10 ปี · คุ้มครอง 15 ปี · 48 โรคร้าย 6 กลุ่ม · มีปันผล · ไม่ตรวจสุขภาพ',
+        reason: '✅ แบ่งพอร์ตบางส่วนเข้าแผนนี้ รับความคุ้มครองโรคร้ายแรงควบคู่กับออมและรับปันผลทุกปี',
+        border: '#5DCAA5', bg: '#F0FBF7', textColor: '#0F6E56', reasonBg: '#C6F0DE', reasonColor: '#085041'
+      });
+    }
+  } else {
+    // เงินโอน > 50 ล้าน → แบ่งพอร์ต
+    products.push({
+      icon: '📦',
+      name: 'Gain 1st 810',
+      tag: 'ผลตอบแทน · IRR 2.00%',
+      tagColor: '#0C447C',
+      tagBg: '#E6F1FB',
+      detail: 'จ่ายเบี้ย 7 ปี · คุ้มครอง 15 ปี · รับเงินคืนรวม 810% · ไม่ตรวจสุขภาพ',
+      reason: `✅ แนะนำใช้ส่วนหลัก — โอนเงิน ${(recAmt * 0.6).toFixed(1)} ล้าน (60%) เข้าแผนนี้ IRR 2.00% สูงสุด`,
+      border: '#B5D4F4', bg: '#F0F7FF', textColor: '#185FA5', reasonBg: '#DBEAFE', reasonColor: '#0C447C'
+    });
+    products.push({
+      icon: '🛡',
+      name: '380 Plus (Par)',
+      tag: 'คุ้มครอง+ปันผล · IRR 1.75%',
+      tagColor: '#085041',
+      tagBg: '#E1F5EE',
+      detail: 'จ่ายเบี้ย 10 ปี · คุ้มครอง 15 ปี · 48 โรคร้าย 6 กลุ่ม · มีปันผล · ไม่ตรวจสุขภาพ',
+      reason: `✅ แบ่งส่วนที่ 2 — โอนเงิน ${(recAmt * 0.4).toFixed(1)} ล้าน (40%) เข้าแผนนี้ รับคุ้มครองโรคร้ายและปันผล`,
+      border: '#5DCAA5', bg: '#F0FBF7', textColor: '#0F6E56', reasonBg: '#C6F0DE', reasonColor: '#085041'
+    });
+    products.push({
+      icon: '💰',
+      name: 'Gain 1st 525 (Par)',
+      tag: 'ปันผล · IRR 1.75%',
+      tagColor: '#633806',
+      tagBg: '#FAEEDA',
+      detail: 'จ่ายเบี้ย 5 ปี · คุ้มครองถึง 80 ปี · มีเงินปันผล · ไม่ตรวจสุขภาพ',
+      reason: '✅ เสริมแผนที่ 3 — เน้นคุ้มครองระยะยาวถึง 80 ปี จ่ายเบี้ยสั้น เหมาะวางแผนส่งต่อรุ่นสู่รุ่น',
+      border: '#FAC775', bg: '#FFFBF0', textColor: '#854F0B', reasonBg: '#FAEEDA', reasonColor: '#633806'
+    });
+  }
+
+  // Render product cards
+  const productContainer = document.getElementById('product-list');
+  productContainer.innerHTML = products.map(p => `
+    <div style="border:1px solid ${p.border};border-radius:10px;padding:13px 15px;background:${p.bg};margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div style="font-size:13px;font-weight:600;color:${p.textColor}">${p.icon} ${p.name}</div>
+        <div style="font-size:10px;background:${p.tagBg};color:${p.tagColor};padding:2px 8px;border-radius:20px;font-weight:500">${p.tag}</div>
+      </div>
+      <div style="font-size:12px;color:${p.textColor};margin-bottom:6px">${p.detail}</div>
+      <div style="font-size:11px;color:${p.reasonColor};background:${p.reasonBg};padding:7px 10px;border-radius:6px;line-height:1.6">${p.reason}</div>
+    </div>
+  `).join('');
+
+  const policyAmtRecommended = Math.min(excess, liquid);
+  const policyAmt = manualAmt > 0 ? Math.min(manualAmt, liquid) : policyAmtRecommended;
   const keepInEstate = totalNet - policyAmt;
   const taxAfter = Math.max(0, keepInEstate - 100) * taxRate;
   const saved = taxBefore - taxAfter;
@@ -647,6 +918,29 @@ function calculate() {
   document.getElementById('r2-before').textContent = fmt(taxBefore);
   document.getElementById('r2-after').textContent = fmt(taxAfter);
   document.getElementById('r2-saved').textContent = fmt(saved);
+
+  // แสดงกล่องเปรียบเทียบถ้ามีการระบุจำนวนเงินเอง
+  const compareEl = document.getElementById('compare-box');
+  if (manualAmt > 0 && Math.abs(manualAmt - policyAmtRecommended) > 0.01) {
+    const taxIfRecommended = Math.max(0, (totalNet - policyAmtRecommended) - 100) * taxRate;
+    const taxIfManual = taxAfter;
+    const diff = policyAmtRecommended - manualAmt;
+    const taxDiff = taxIfRecommended - taxIfManual;
+    let compareMsg = '';
+    if (manualAmt < policyAmtRecommended) {
+      compareMsg = `⚠️ ท่านระบุโอน <b>${fmt(manualAmt)} ล้าน</b> แต่ระบบแนะนำโอน <b>${fmt(policyAmtRecommended)} ล้าน</b><br>
+        ถ้าโอนตามที่ระบบแนะนำ จะประหยัดภาษีได้เพิ่มอีก <b style="color:#085041">${fmt(Math.abs(taxDiff))} ล้านบาท</b>`;
+      compareEl.className = 'alert alert-amber';
+    } else {
+      compareMsg = `ℹ️ ท่านระบุโอน <b>${fmt(manualAmt)} ล้าน</b> ซึ่งมากกว่าที่ระบบแนะนำ (<b>${fmt(policyAmtRecommended)} ล้าน</b>)<br>
+        เงินสด/สภาพคล่องที่มีอยู่ ${fmt(liquid)} ล้าน — โอนได้สูงสุด <b>${fmt(Math.min(manualAmt, liquid))} ล้าน</b>`;
+      compareEl.className = 'alert alert-green';
+    }
+    compareEl.innerHTML = compareMsg;
+    compareEl.style.display = 'block';
+  } else {
+    compareEl.style.display = 'none';
+  }
 
   const afterTotal = keepInEstate + policyAmt || 1;
   makeBars('bar-after', [
@@ -676,9 +970,12 @@ function calculate() {
 }
 
 function resetAll() {
-  ['land','cash','stock','vehicle','debt','years'].forEach(id => document.getElementById(id).value = '');
+  ['land','cash','stock','vehicle','debt','years','age','policyamt'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('results').classList.remove('show');
   document.querySelectorAll('.heir-btn').forEach((b,i) => b.classList.toggle('active', i === 0));
+  document.querySelectorAll('.health-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('hbtn-none').classList.add('active');
+  healthState = 'none';
   taxRate = 0.05;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
