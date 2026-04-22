@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home First — Objection Handling Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #12243d;
+    --blue: #1a4fa0;
+    --blue-bright: #2563eb;
+    --gold: #f5a623;
+    --gold-light: #ffd166;
+    --teal: #06b6d4;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f97316;
+    --text: #e8edf5;
+    --text-muted: #8fa3c0;
+    --card: rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Mesh background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(26,79,160,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(6,182,212,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 60% 40%, rgba(245,166,35,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  h1 span { color: var(--gold); }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 300;
+  }
+
+  /* Step indicator */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .breadcrumb-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.3s;
+  }
+
+  .breadcrumb-item.active {
+    color: var(--gold);
+    background: rgba(245,166,35,0.1);
+    border-color: rgba(245,166,35,0.2);
+  }
+
+  .breadcrumb-arrow {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease;
+    backdrop-filter: blur(8px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .card.gold::before { background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+  .card.blue::before { background: linear-gradient(90deg, var(--blue-bright), var(--teal)); }
+  .card.red::before { background: linear-gradient(90deg, var(--red), var(--orange)); }
+  .card.green::before { background: linear-gradient(90deg, var(--green), var(--teal)); }
+  .card.teal::before { background: linear-gradient(90deg, var(--teal), #818cf8); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .card-icon.gold { background: rgba(245,166,35,0.15); }
+  .card-icon.red { background: rgba(239,68,68,0.15); }
+  .card-icon.blue { background: rgba(37,99,235,0.15); }
+  .card-icon.green { background: rgba(16,185,129,0.15); }
+  .card-icon.teal { background: rgba(6,182,212,0.15); }
+
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  .card p {
+    color: #b8c9e0;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  .highlight-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #c8d8ef;
+    line-height: 1.7;
+  }
+
+  .highlight-box.green { border-left-color: var(--green); }
+  .highlight-box.teal { border-left-color: var(--teal); }
+  .highlight-box.red { border-left-color: var(--red); }
+  .highlight-box.blue { border-left-color: var(--blue-bright); }
+
+  /* Choices */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .choice-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+    font-size: 15px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .choice-btn::after {
+    content: '→';
+    position: absolute;
+    right: 18px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.25s;
+    color: var(--gold);
+    font-size: 16px;
+  }
+
+  .choice-btn:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(245,166,35,0.35);
+    transform: translateX(4px);
+    padding-right: 40px;
+  }
+
+  .choice-btn:hover::after { opacity: 1; transform: translateX(0); }
+
+  .choice-btn.red-hover:hover { border-color: rgba(239,68,68,0.4); }
+  .choice-btn.red-hover:hover::after { color: var(--red); }
+  .choice-btn.green-hover:hover { border-color: rgba(16,185,129,0.4); }
+  .choice-btn.green-hover:hover::after { color: var(--green); }
+  .choice-btn.teal-hover:hover { border-color: rgba(6,182,212,0.4); }
+  .choice-btn.teal-hover:hover::after { color: var(--teal); }
+  .choice-btn.blue-hover:hover { border-color: rgba(37,99,235,0.4); }
+  .choice-btn.blue-hover:hover::after { color: var(--blue-bright); }
+
+  .choice-emoji {
+    font-size: 20px;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .choice-text strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+    font-size: 15px;
+  }
+
+  .choice-text small {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 300;
+  }
+
+  /* Script boxes */
+  .script-box {
+    background: rgba(6,182,212,0.06);
+    border: 1px solid rgba(6,182,212,0.15);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+  }
+
+  .script-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 10px;
+  }
+
+  .script-box p {
+    color: #d4e8f5;
+    font-size: 14px;
+    line-height: 1.9;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* Back button */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 8px 0;
+    margin-top: 28px;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    transition: color 0.2s;
+  }
+
+  .back-btn:hover { color: var(--gold); }
+
+  /* Grid for steps */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  @media (max-width: 600px) {
+    .steps-grid { grid-template-columns: 1fr; }
+  }
+
+  .step-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .step-card .step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .step-card .step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .step-card .step-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Tags */
+  .tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+
+  .tag {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .tag.red { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+  .tag.green { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+  .tag.gold { background: rgba(245,166,35,0.12); color: var(--gold-light); border: 1px solid rgba(245,166,35,0.2); }
+  .tag.teal { background: rgba(6,182,212,0.12); color: #67e8f9; border: 1px solid rgba(6,182,212,0.2); }
+
+  /* Result badge */
+  .result-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #6ee7b7;
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 24px 0;
+  }
+
+  /* Restart */
+  .restart-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(245,166,35,0.12);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--gold);
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-top: 20px;
+  }
+
+  .restart-btn:hover {
+    background: rgba(245,166,35,0.2);
+    transform: translateY(-1px);
+  }
+
+  /* Hidden */
+  .screen { display: none; }
+  .screen.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="badge">🏦 BBL Home First Training Tool</div>
+    <h1>Objection Handling<br><span>Framework</span></h1>
+    <p class="subtitle">Interactive guide สำหรับพนักงานธนาคาร — คลิกตามสถานการณ์จริง</p>
+  </div>
+
+  <!-- SCREEN 0: Start -->
+  <div class="screen active" id="s0">
+    <div class="card gold">
+      <div class="card-icon gold">🎯</div>
+      <div class="card-label">Step 1 of 4 — ระบุสถานการณ์</div>
+      <h2>ลูกค้าพูดว่าอะไร?</h2>
+      <p>เลือกข้อโต้แย้งที่ลูกค้าพูดมากที่สุดในตอนนี้</p>
+      <div class="highlight-box">
+        💡 <strong>จำไว้:</strong> ข้อโต้แย้ง ≠ การปฏิเสธ — มันคือสัญญาณว่าลูกค้ากำลังคิดอยู่!
+      </div>
+      <div class="choices">
+        <button class="choice-btn red-hover" onclick="go('s1')">
+          <span class="choice-emoji">💸</span>
+          <div class="choice-text">
+            <strong>"เบี้ยแพงไป / จ่ายทิ้งเปล่า"</strong>
+            <small>ลูกค้าตั้งคำถามเรื่องราคาและคุ้มค่า</small>
+          </div>
+        </button>
+        <button class="choice-btn teal-hover" onclick="go('s2')">
+          <span class="choice-emoji">🤔</span>
+          <div class="choice-text">
+            <strong>"ไม่รู้จะซื้อทำไม / ไม่เห็นประโยชน์"</strong>
+            <small>ลูกค้าไม่รู้สึกถึงคุณค่าของประกัน</small>
+          </div>
+        </button>
+        <button class="choice-btn green-hover" onclick="go('s3')">
+          <span class="choice-emoji">💰</span>
+          <div class="choice-text">
+            <strong>"ตอนนี้ไม่มีเงิน / งบไม่พอ"</strong>
+            <small>ลูกค้าบอกว่าไม่มีกำลังซื้อ</small>
+          </div>
+        </button>
+        <button class="choice-btn blue-hover" onclick="go('s4')">
+          <span class="choice-emoji">⏳</span>
+          <div class="choice-text">
+            <strong>"ขอคิดดูก่อน / ยังไม่พร้อม"</strong>
+            <small>ลูกค้าลังเลและยืดเวลา</small>
+          </div>
+        </button>
+        <button class="choice-btn" onclick="go('s5')">
+          <span class="choice-emoji">💪</span>
+          <div class="choice-text">
+            <strong>"ฉันแข็งแรงดี / ไม่น่าจะเป็นอะไร"</strong>
+            <small>ลูกค้ามั่นใจในสุขภาพตัวเอง</small>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: แพง -->
+  <div class="screen" id="s1">
+    <div class="card red">
+      <div class="card-icon red">💸</div>
+      <div class="card-label">ข้อโต้แย้ง #1</div>
+      <h2>"เบี้ยแพงไป"</h2>
+      <div class="tags">
+        <span class="tag red">ราคา</span>
+        <span class="tag gold">คุ้มค่า</span>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <span class="step-num">01</span>
+          <div class="step-title">รับรู้ความรู้สึก</div>
+          <div class="step-desc">อย่าเถียงทันที รับฟังและยืนยันว่าเข้าใจ</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">02</span>
+          <div class="step-title">ให้ภาพใหม่</div>
+          <div class="step-desc">เปลี่ยนมุมจาก "ค่าใช้จ่าย" เป็น "ต้นทุนความเสี่ยง"</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">03</span>
+          <div class="step-title">ลด Step by Step</div>
+          <div class="step-desc">30→25→20 ปี ไม่ใช่ 30→10 ทันที!</div>
+        </div>
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script แนะนำ</div>
+        <p>"เข้าใจเลยครับ/ค่ะ ถ้ามองแค่ตัวเลขมันดูหนักจริงๆ<br>
+        แต่ขอถามว่า ถ้าวันนี้เราไม่อยู่ ค่าผ่อนบ้านที่เหลืออยู่ ครอบครัวเราจะจัดการยังไงครับ?<br>
+        ตัวเลขที่เห็นตอนนี้ vs ภาระที่คนข้างหลังต้องแบก อันไหนหนักกว่ากันครับ?"</p>
+      </div>
+
+      <div class="highlight-box red">
+        🚫 <strong>อย่าทำ:</strong> ลดจาก 30 ปี ไปเหลือ 10 ปีทันที — ลูกค้าจะรู้สึกว่าของไม่มีมูลค่า เหมือนต่อเสื้อ 999 แล้วลดเหลือ 200
+      </div>
+
+      <div class="highlight-box green">
+        ✅ <strong>ให้ทำ:</strong> ใช้ค่าธรรมเนียมโอน/จดจำนอง เป็น anchor — ส่วนต่าง 95,000 บาทที่ประหยัดได้จากมาตรการ 30 มิ.ย. เอามาซื้อความคุ้มครองได้เลย
+      </div>
+
+      <div class="choices">
+        <button class="choice-btn green-hover" onclick="go('s1a')">
+          <span class="choice-emoji">👍</span>
+          <div class="choice-text">
+            <strong>ลูกค้าเริ่มสนใจ แต่ยังรู้สึกว่าแพง</strong>
+            <small>→ ใช้เทคนิค Step Reduction</small>
+          </div>
+        </button>
+        <button class="choice-btn teal-hover" onclick="go('s1b')">
+          <span class="choice-emoji">📊</span>
+          <div class="choice-text">
+            <strong>ลูกค้าชอบลงทุน / เอาเงินไปทำอย่างอื่นดีกว่า</strong>
+            <small>→ Framework ความเสี่ยง vs ผลตอบแทน</small>
+          </div>
+        </button>
+      </div>
+      <button class="back-btn" onclick="go('s0')">← กลับหน้าแรก</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1a: Step Reduction -->
+  <div class="screen" id="s1a">
+    <div class="card green">
+      <div class="card-icon green">📉</div>
+      <div class="card-label">เทคนิค — Step Reduction</div>
+      <h2>ลดอย่างมี Pattern</h2>
+
+      <p>ข้อตกลงภายในสาขา: <strong>ลดครั้งละ 50,000 บาท</strong> เพื่อให้ทุกคนมี standard เดียวกัน</p>
+
+      <div class="highlight-box teal">
+        📱 <strong>Analogy ใกล้ตัว:</strong> เหมือนซื้อ iPhone — เราไม่ได้บอกว่า "เอาตัวถูกสุดไปเลย" แต่เสนอตัว top ก่อนแล้วค่อยดู option ที่เหมาะกว่า
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — การลด Step</div>
+        <p>"ถ้างบไม่ถึง 30 ปี เราลองดู 25 ปีก่อนไหมครับ/ค่ะ?<br>
+        เบี้ยจะลดลงประมาณ 50,000 บาท แต่ความคุ้มครองยังครอบคลุมช่วงหนักที่สุดของสัญญา<br>
+        ลูกน้องยังได้บ้านอยู่ ครอบครัวยังอุ่นใจได้เหมือนเดิมครับ"</p>
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: ลูกค้าซื้อในระยะเวลาที่สั้นลงแต่ยังได้ความคุ้มครองที่มีนัยสำคัญ
+      </div>
+
+      <button class="back-btn" onclick="go('s1')">← ย้อนกลับ</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1b: นักลงทุน -->
+  <div class="screen" id="s1b">
+    <div class="card teal">
+      <div class="card-icon teal">📈</div>
+      <div class="card-label">เทคนิค — Risk vs Return Framework</div>
+      <h2>ลูกค้าชอบลงทุน</h2>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <span class="step-num">ก</span>
+          <div class="step-title">ลงทุนจ่ายค่าเสี่ยง</div>
+          <div class="step-desc">ทุกการลงทุนมีต้นทุนความเสี่ยง ประกันคือการ hedge</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">ข</span>
+          <div class="step-title">ความกังวลที่แท้จริง</div>
+          <div class="step-desc">ถามให้ลึกขึ้นว่ากังวลเรื่องอะไรจริงๆ</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">ค</span>
+          <div class="step-title">ลงทุนได้ทั้งหมด</div>
+          <div class="step-desc">หากเกิดเหตุ portfolio ที่สร้างมาหายไปพร้อมกัน</div>
+        </div>
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — สำหรับนักลงทุน</div>
+        <p>"เข้าใจเลยครับ/ค่ะ ที่คุณชอบลงทุน — นั่นแสดงว่ามองเรื่องอนาคตเป็น<br>
+        ขอถามว่า ถ้าวันนี้เราไม่อยู่กะทันหัน portfolio ที่สร้างมายังคงอยู่ไหม?<br>
+        หรือคนข้างหลังต้องขายทิ้งเพื่อมาผ่อนบ้านก่อน?<br>
+        ประกันนี้คือ shield ที่ทำให้ portfolio ของคุณยังทำงานต่อได้ครับ"</p>
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: เปลี่ยน framing จาก "จ่ายทิ้ง" เป็น "ค่าคุ้มครอง portfolio"
+      </div>
+
+      <button class="back-btn" onclick="go('s1')">← ย้อนกลับ</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: ไม่รู้จะซื้อทำไม -->
+  <div class="screen" id="s2">
+    <div class="card teal">
+      <div class="card-icon teal">🤔</div>
+      <div class="card-label">ข้อโต้แย้ง #2</div>
+      <h2>"ไม่รู้จะซื้อทำไม"</h2>
+      <div class="tags">
+        <span class="tag teal">คุณค่า</span>
+        <span class="tag gold">ความเข้าใจ</span>
+      </div>
+
+      <p>ลูกค้ากลุ่มนี้ยังไม่ได้ปฏิเสธ — แค่ยังไม่เห็นภาพ ต้องหาว่าเป็น case ไหน</p>
+
+      <div class="choices">
+        <button class="choice-btn teal-hover" onclick="go('s2a')">
+          <span class="choice-emoji">🔍</span>
+          <div class="choice-text">
+            <strong>ลูกค้าไม่เคยมีประกันเลย</strong>
+            <small>→ ไม่รู้จักคุณค่าประกันจริงๆ ต้องสร้างภาพก่อน</small>
+          </div>
+        </button>
+        <button class="choice-btn green-hover" onclick="go('s2b')">
+          <span class="choice-emoji">📋</span>
+          <div class="choice-text">
+            <strong>ลูกค้ามีประกันอยู่แล้ว</strong>
+            <small>→ ถามว่าครอบคลุมภาระหนี้บ้านด้วยไหม?</small>
+          </div>
+        </button>
+      </div>
+      <button class="back-btn" onclick="go('s0')">← กลับหน้าแรก</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2a -->
+  <div class="screen" id="s2a">
+    <div class="card teal">
+      <div class="card-icon teal">🌱</div>
+      <div class="card-label">ไม่เคยมีประกัน — สร้าง Awareness</div>
+      <h2>เล่า Story ก่อน</h2>
+
+      <div class="script-box">
+        <div class="script-label">💬 Story — วิศวกรไฟฟ้ารั่ว</div>
+        <p>"ขอเล่าเรื่องจริงให้ฟังนะครับ/ค่ะ<br>
+        ลูกค้าอายุ 35 ซื้อบ้าน 17 ล้าน เป็นวิศวกร มีภรรยา เขาลังเลเรื่องประกันเหมือนกัน<br>
+        แต่สุดท้ายตัดสินใจซื้อ<br>
+        ไม่ถึงปี เขาเสียชีวิตจากไฟฟ้ารั่ว — ลูกน้องเขาเองติดตั้ง<br>
+        วันนั้น ภรรยาไม่ต้องแบกหนี้บ้านแม้แต่บาทเดียว<br>
+        และเธอโทรมาขอบคุณ<br><br>
+        เราไม่ได้ขายกรมธรรม์ครับ/ค่ะ — เราขายความสงบใจของครอบครัว"</p>
+      </div>
+
+      <div class="highlight-box teal">
+        🎯 ปรับ Story ตาม Gen ลูกค้า: Gen X → คนดัง/นักธุรกิจ | Gen Y → influencer/คนรู้จัก
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: ให้ลูกค้าเห็นภาพ "วันที่ไม่มีประกัน" แล้วรู้สึกว่าต้องการมัน
+      </div>
+
+      <button class="back-btn" onclick="go('s2')">← ย้อนกลับ</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2b -->
+  <div class="screen" id="s2b">
+    <div class="card green">
+      <div class="card-icon green">📋</div>
+      <div class="card-label">มีประกันอยู่แล้ว — เช็ค Gap</div>
+      <h2>ตรวจ Coverage Gap</h2>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — ตรวจ Gap</div>
+        <p>"ดีมากเลยครับ/ค่ะ ที่มีประกันอยู่แล้ว<br>
+        ขอถามนิดนึงนะครับ ประกันที่มีอยู่ ถ้าเกิดเหตุวันนี้<br>
+        มันพอปิดยอดหนี้บ้าน [X] ล้านที่เหลืออยู่ได้ไหมครับ?<br>
+        ส่วนใหญ่ประกันชีวิตทั่วไปครอบคลุมค่าใช้จ่ายชีวิต แต่อาจไม่ได้ออกแบบมาปิดหนี้บ้านโดยตรง<br>
+        Home First นี่มันออกแบบมาเพื่อเรื่องนี้โดยเฉพาะครับ"</p>
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: ให้ลูกค้าเห็น gap ระหว่างประกันที่มีอยู่กับภาระหนี้จริง
+      </div>
+
+      <button class="back-btn" onclick="go('s2')">← ย้อนกลับ</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: ไม่มีเงิน -->
+  <div class="screen" id="s3">
+    <div class="card green">
+      <div class="card-icon green">💰</div>
+      <div class="card-label">ข้อโต้แย้ง #3</div>
+      <h2>"ไม่มีเงิน"</h2>
+      <div class="tags">
+        <span class="tag green">กำลังซื้อ</span>
+        <span class="tag gold">การวางแผน</span>
+      </div>
+
+      <p>ในฐานะ Banker เรามี Statement — ใช้ Survival Ratio Workshop เพื่อให้เขาเห็นภาพจริง</p>
+
+      <div class="highlight-box">
+        🧮 <strong>Workshop Survival Ratio:</strong> ให้ลูกค้าหยิบมือถือมา แล้วทำตามทีละขั้น
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <span class="step-num">①</span>
+          <div class="step-title">ก้อน 1 — รายได้รวม</div>
+          <div class="step-desc">Active income ประจำ + income อื่น + passive income = รวมทั้งหมด</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">②</span>
+          <div class="step-title">ก้อน 2 — รายจ่ายรวม</div>
+          <div class="step-desc">Variable expenses + Fixed expenses = รวมทั้งหมด</div>
+        </div>
+        <div class="step-card">
+          <span class="step-num">③</span>
+          <div class="step-title">ก้อน 1 ÷ ก้อน 2</div>
+          <div class="step-desc">≥ 1.5 = มีศักยภาพ | 1.0-1.5 = วางแผน | &lt; 1.0 = ต้องช่วยก่อน</div>
+        </div>
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — Workshop Calculator</div>
+        <p>"ไม่เป็นไรครับ/ค่ะ เราลองมาดูตัวเลขจริงกันก่อนดีไหม?<br>
+        หยิบมือถือขึ้นมาเปิด calculator ได้เลย<br>
+        เราจะทำ mini workshop ด้วยกัน ใช้เวลาแค่ 3 นาทีครับ<br>
+        พอเห็นตัวเลข เราจะรู้เลยว่าเราวางแผนยังไงได้บ้าง"</p>
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: ให้ตัวเลขจริงพูดแทนเรา — ไม่ใช่เราเถียงว่ามีเงินหรือไม่มี
+      </div>
+
+      <button class="back-btn" onclick="go('s0')">← กลับหน้าแรก</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: ขอคิดดูก่อน -->
+  <div class="screen" id="s4">
+    <div class="card blue">
+      <div class="card-icon blue">⏳</div>
+      <div class="card-label">ข้อโต้แย้ง #4</div>
+      <h2>"ขอคิดดูก่อน"</h2>
+      <div class="tags">
+        <span class="tag teal">ลังเล</span>
+        <span class="tag gold">ต้องการเวลา</span>
+      </div>
+
+      <p>นี่คือสัญญาณที่ดี — ลูกค้ายังไม่ปฏิเสธ แค่ต้องการข้อมูลเพิ่มหรือแรงกระตุ้น</p>
+
+      <div class="highlight-box blue">
+        📅 <strong>Urgency จริง:</strong> มาตรการค่าธรรมเนียมโอน/จดจำนองหมด 30 มิ.ย. 69 — ส่วนต่าง 95,000 บาท เอามาเป็นเบี้ยประกันได้เลย
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — สร้าง Urgency จากข้อเท็จจริง</div>
+        <p>"เข้าใจเลยครับ/ค่ะ ขอให้ข้อมูลเพิ่มนิดนึงนะครับ<br>
+        ตอนนี้มีมาตรการลดค่าธรรมเนียมโอนและจดจำนองอยู่<br>
+        ถ้าบ้าน 3 ล้าน ค่าใช้จ่ายตรงนี้ประหยัดได้เกือบ 95,000 บาท<br>
+        เงินส่วนนี้เอามาซื้อความคุ้มครองบ้านได้เลย โดยไม่ต้อง懐 懐懐 懐懐<br>
+        เหมือน win-win สองเรื่องพร้อมกันครับ"</p>
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — ถ้าไม่มี urgency จากมาตรการ</div>
+        <p>"ได้เลยครับ/ค่ะ แต่ขอถามนิดนึงว่า<br>
+        สิ่งที่ทำให้ยังลังเลอยู่คือเรื่องอะไรครับ? ราคา? หรือยังไม่แน่ใจเรื่อง coverage?<br>
+        ถ้าบอกได้ เราช่วยตอบตรงๆ ได้เลย ไม่ต้องรอกลับไปคิดคนเดียวครับ"</p>
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: หา "ความกังวลที่แท้จริง" ก่อนที่ลูกค้าจะออกไป
+      </div>
+
+      <button class="back-btn" onclick="go('s0')">← กลับหน้าแรก</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: แข็งแรงดี -->
+  <div class="screen" id="s5">
+    <div class="card gold">
+      <div class="card-icon gold">💪</div>
+      <div class="card-label">ข้อโต้แย้ง #5</div>
+      <h2>"ฉันแข็งแรงดี"</h2>
+      <div class="tags">
+        <span class="tag gold">มั่นใจตัวเอง</span>
+        <span class="tag red">ความเสี่ยงที่มองไม่เห็น</span>
+      </div>
+
+      <p>ใช้ story คนดังหรือคนใกล้ตัวตาม Gen ของลูกค้า — เพราะคนเราไม่รู้จักความเสี่ยงจนกว่าจะเจอ</p>
+
+      <div class="highlight-box">
+        🎭 <strong>Story by Gen:</strong>
+        <br>• Gen X (40+): ยกตัวอย่างนักธุรกิจ, ดาราอาวุโสที่เสียชีวิตกะทันหัน
+        <br>• Gen Y (30-40): เพื่อนรุ่นเดียวกัน, youtuber/influencer ที่คนรู้จัก
+        <br>• เน้น: "ไม่มีใครรู้จักความเสี่ยงล่วงหน้า"
+      </div>
+
+      <div class="script-box">
+        <div class="script-label">💬 Script — ใช้ Story บอกเล่า</div>
+        <p>"ดีมากเลยครับ/ค่ะ ที่ดูแลสุขภาพได้ดีขนาดนี้<br>
+        แต่ขอถามนะครับ ลูกค้าอีกท่านที่ผมเล่าให้ฟัง เขาเป็นวิศวกรแข็งแรงดี อายุแค่ 35<br>
+        ใครจะรู้ว่าจะเกิดอะไรขึ้นจากไฟฟ้ารั่ว?<br>
+        ประกันนี้ไม่ได้ขายให้คนป่วย — มันขายให้คน healthy ที่อยากปกป้องครอบครัวครับ"</p>
+      </div>
+
+      <div class="highlight-box green">
+        💡 <strong>Reframe:</strong> "ยิ่งแข็งแรง เบี้ยยิ่งถูก — นี่คือเวลาที่ดีที่สุดในการซื้อ ไม่ใช่ตอนป่วยแล้ว"
+      </div>
+
+      <div class="result-badge">
+        🎯 Goal: เปลี่ยน "ฉันแข็งแรง" เป็น "ยิ่งต้องซื้อตอนนี้เลย"
+      </div>
+
+      <button class="back-btn" onclick="go('s0')">← กลับหน้าแรก</button>
+      <br>
+      <button class="restart-btn" onclick="go('s0')">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let history = ['s0'];
+
+  function go(screenId) {
+    // Hide all
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Show target
+    document.getElementById(screenId).classList.add('active');
+    // Track history
+    history.push(screenId);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Update breadcrumb
+    updateBreadcrumb();
+  }
+
+  function updateBreadcrumb() {
+    // Simple - no breadcrumb UI needed, back buttons handle it
+  }
+</script>
+</body>
+</html>
